@@ -99,8 +99,8 @@ impl_activate (GeditPlugin *plugin,
 
 	theme = gtk_icon_theme_get_default ();
 	
-	if (gtk_icon_theme_has_icon (theme, "accessories-character-map"))
-		image = gtk_image_new_from_icon_name ("accessories-character-map",
+	if (gtk_icon_theme_has_icon (theme, "accessories-dictionary"))
+		image = gtk_image_new_from_icon_name ("accessories-dictionary",
 						      GTK_ICON_SIZE_MENU);
 	else
 		image = gtk_image_new_from_icon_name ("gdict",
@@ -115,10 +115,6 @@ impl_activate (GeditPlugin *plugin,
 
 	gtk_object_sink (GTK_OBJECT (image));
 
-//	statusbar = GTK_STATUSBAR (gedit_window_get_statusbar (window));
-/*	data->context_id = gtk_statusbar_get_context_id (statusbar,
-							 "Dictionary Description");
-*/
 	g_object_set_data_full (G_OBJECT (window),
 				WINDOW_DATA_KEY,
 				data,
@@ -137,10 +133,6 @@ impl_deactivate	(GeditPlugin *plugin,
 	data = (WindowData *) g_object_get_data (G_OBJECT (window),
 						 WINDOW_DATA_KEY);
 	g_return_if_fail (data != NULL);
-
-	/*chartable = gedit_dict_panel_get_table
-					(GEDIT_DICT_PANEL (data->panel));*/
-	//on_table_status_message (chartable, NULL, window);
 
 	panel = gedit_window_get_side_panel (window);
 	gedit_panel_remove_item (panel, data->panel);
