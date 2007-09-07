@@ -23,12 +23,14 @@
 #include "dict-panel.h"
 
 #include <glib/gi18n-lib.h>
+#include <gconf/gconf-client.h>
 #include <gedit/gedit-debug.h>
 #include <gedit/gedit-window.h>
 #include <gedit/gedit-panel.h>
 
 
 #define WINDOW_DATA_KEY	"GeditDictPluginWindowData"
+#define PANEL_KEY "/apps/gedit-2/plugins/dictionary"
 
 #define GEDIT_DICT_PLUGIN_GET_PRIVATE(object) \
 				(G_TYPE_INSTANCE_GET_PRIVATE ((object),	\
@@ -82,6 +84,19 @@ create_dict_panel (GeditWindow *window)
 }
 
 static void
+restore_position(GeditDictPanel *panel)
+{
+	GConfClient *client;
+	gint position;
+	
+	client = gconf_client_get_default();
+	position = gconf_client_get_int(client, PANEL_KEY "/panel_position", NULL);
+	gedit_dict_panel_set_position(panel, position);
+	
+	g_object_unref(client);
+}
+
+static void
 impl_activate (GeditPlugin *plugin,
 	       GeditWindow *window)
 {
@@ -107,6 +122,8 @@ impl_activate (GeditPlugin *plugin,
 						      GTK_ICON_SIZE_MENU);
 
 	data->panel = create_dict_panel (window);
+	
+	restore_position(GEDIT_DICT_PANEL(data->panel));
 	
 	gedit_panel_add_item (panel,
 			      data->panel,
@@ -135,6 +152,7 @@ impl_deactivate	(GeditPlugin *plugin,
 	g_return_if_fail (data != NULL);
 
 	panel = gedit_window_get_side_panel (window);
+	
 	gedit_panel_remove_item (panel, data->panel);
 
 	g_object_set_data (G_OBJECT (window), WINDOW_DATA_KEY, NULL);

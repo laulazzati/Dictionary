@@ -64,8 +64,13 @@ struct _GeditDictPanelClass
  * Public methods
  */
 GType		 gedit_dict_panel_get_type	   (void) G_GNUC_CONST;
-GType		 gedit_dict_panel_register_type 	   (GTypeModule * module);
+
+GType		 gedit_dict_panel_register_type    (GTypeModule * module);
+
 GtkWidget *	 gedit_dict_panel_new 		   (void);
+
+void             gedit_dict_panel_set_position     (GeditDictPanel *panel,
+						    gint pos);
 
 G_END_DECLS
 

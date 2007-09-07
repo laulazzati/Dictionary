@@ -41,6 +41,8 @@
 #define GDICT_DEFAULT_SOURCE_NAME           "Default"
 #define GDICT_GCONF_SOURCE_KEY              GDICT_GCONF_DIR "/source-name"
 
+#define PANEL_KEY "/apps/gedit-2/plugins/dictionary"
+
 /* sidebar pages logical ids */
 #define GDICT_SIDEBAR_SPELLER_PAGE      "speller"
 #define GDICT_SIDEBAR_DATABASES_PAGE    "db-chooser"
@@ -50,6 +52,8 @@ GEDIT_PLUGIN_DEFINE_TYPE(GeditDictPanel, gedit_dict_panel, GTK_TYPE_VBOX)
 
 struct _GeditDictPanelPrivate
 {
+	GtkPaned   *paned;
+
 	GtkTooltips *tooltips;
   
 	GConfClient *gconf_client;
@@ -414,9 +418,25 @@ sidebar_page_changed_cb (GdictSidebar *sidebar,
 }
 
 static void
-gtranslator_dict_panel_link_clicked(GtkWidget *defbox,
-				    const gchar *link_text,
-				    GeditDictPanel *panel)
+store_position(GObject    *gobject,
+               GParamSpec *arg1,
+               gpointer    user_data)
+{
+	GtkPaned *paned = GTK_PANED(gobject);
+	GConfClient *client;
+	gint position;
+	
+	client = gconf_client_get_default();
+	position = gtk_paned_get_position(paned);
+	gconf_client_set_int(client, PANEL_KEY "/panel_position", position, NULL);
+	
+	g_object_unref(client);
+}
+
+static void
+gedit_dict_panel_link_clicked(GtkWidget *defbox,
+			      const gchar *link_text,
+			      GeditDictPanel *panel)
 {
 	if (!link_text)
 		return;
@@ -432,7 +452,6 @@ gtranslator_dict_panel_link_clicked(GtkWidget *defbox,
 static void
 gedit_dict_panel_draw (GeditDictPanel *panel)
 {
-	GtkPaned   *paned;
 	GtkWidget  *vbox;
 	GtkWidget  *hbox;
 	
@@ -477,7 +496,7 @@ gedit_dict_panel_draw (GeditDictPanel *panel)
 		gdict_defbox_set_context (GDICT_DEFBOX (panel->priv->defbox),
 					  panel->priv->context);
 	g_signal_connect(panel->priv->defbox, "link-clicked",
-			 G_CALLBACK(gtranslator_dict_panel_link_clicked), panel);
+			 G_CALLBACK(gedit_dict_panel_link_clicked), panel);
 	
 	gtk_container_add (GTK_CONTAINER (vbox), panel->priv->defbox);
 	gtk_widget_show (panel->priv->defbox);
@@ -490,11 +509,15 @@ gedit_dict_panel_draw (GeditDictPanel *panel)
 	/*
 	 * Paned
 	 */
-	paned = GTK_PANED(gtk_vpaned_new());
-	gtk_box_pack_start (GTK_BOX (panel), GTK_WIDGET(paned), TRUE, TRUE, 0);
-	gtk_paned_pack1 (paned, vbox, FALSE, TRUE);
-	gtk_paned_pack2 (paned, panel->priv->sidebar, TRUE, TRUE);
-	gtk_widget_show (GTK_WIDGET(paned));
+	panel->priv->paned = GTK_PANED(gtk_vpaned_new());
+	gtk_box_pack_start (GTK_BOX (panel), GTK_WIDGET(panel->priv->paned), TRUE, TRUE, 0);
+	gtk_paned_pack1 (panel->priv->paned, vbox, FALSE, TRUE);
+	gtk_paned_pack2 (panel->priv->paned, panel->priv->sidebar, TRUE, TRUE);
+	gtk_widget_show (GTK_WIDGET(panel->priv->paned));
+	
+	g_signal_connect(panel->priv->paned, "notify::position",
+			 G_CALLBACK(store_position), NULL);
+	
 	
 	/*
 	 * Speller
@@ -670,4 +693,10 @@ gedit_dict_panel_new (void)
 	return GTK_WIDGET (g_object_new (GEDIT_TYPE_DICT_PANEL, NULL));
 }
 
+void
+gedit_dict_panel_set_position(GeditDictPanel *panel,
+			      gint pos)
+{
+	gtk_paned_set_position(panel->priv->paned, pos);
+}
 
